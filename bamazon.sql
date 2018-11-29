@@ -14,7 +14,7 @@ CREATE TABLE products (
 );
 
 INSERT INTO products (item_id, product_name, department_name, price, stock_quantity)
-VALUES (1, "macbook", "electronics", 500, 25),
+VALUES (1, "macbook", "electronics", 500.00, 25),
 			   (2, "notebook", "office_supplies", 5, 100),
                (3, "Converse Lowtops", "shoes", 50, 42),
                (4, "dog harness","pet_supplies", 12, 15),
