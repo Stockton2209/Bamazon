@@ -1,6 +1,8 @@
-
+//using mysql (workbench) for database
 const mysql = require("mysql");
+//using inquirer for the prompt in the command line
 const inquirer = require("inquirer");
+//using chalk to provide color to console content
 const chalk = require("chalk");
 
 //create a connection
@@ -28,6 +30,7 @@ connection.connect(function(err) {
 function runQueries() {
     connection.query("SELECT * FROM products", function(err, result) {
       displayProducts(err, result);
+      promptCustomer();
     });
   }
 
@@ -35,15 +38,84 @@ function runQueries() {
 function displayProducts(err, result){
     result.forEach(function(r){
       console.log(`---------------`)
-      console.log(`${r.id} | ${chalk.green(r.product_name)} | ${chalk.red(r.department_name)}, | ${chalk.yellow(r.price)} 
-      | ${r.stock_quantity}`);
+      console.log(`${r.id} | ${chalk.green(r.product_name)} | ${chalk.red(r.department_name)}, | 
+      ${chalk.yellow(r.price)} | ${r.stock_quantity}`);
       console.log(`----------------`);
     })
   }
 // The app should then prompt users with two messages.
 
-//  * The first should ask them the ID of the product they would like to buy.
-//  * The second message should ask how many units of the product they would like to buy.
+//need a function to create the prompt (promptCustomre) 
+  function promptCustomer() {
+
+    // The first should ask them the ID of the product they would like to buy.
+    inquirer.prompt([
+      {
+        type: "input",
+        name: "item_id",
+        message: "Please enter the ID number of the item you would like to purchase.",
+        validate: validateInput,
+        filter: Number
+      },
+    //  * The second message should ask how many units of the product they would like to buy.
+      {
+        type: "input",
+        name: "quantity",
+        message: "How many would you like to purchase?",
+        validate: validateInput,
+        filter: Number
+      }
+    //Once the customer has placed the order, your application should check if your store has enough of the product to meet the customer"s request.
+    ]).then(function(input) {
+      // variables to access each item and it"s quantity value
+      var item = input.item_id;
+      var quantity = input.quantity;
+      // Query the database to confirm the item ID they picked exists and has enough quantity
+      var query = connection.query(
+        "SELECT * FROM products WHERE ?", 
+          {item_id: item}, 
+          function(err, data) {
+            if (err) throw err;
+      //if the user inputs an invalid id, the dataset will be empty and an error message will run
+            if (data.length === 0) {
+              console.log("ERROR: Invalid Item ID. Please select a valid Item ID.");
+              displayProducts();
+            } else {
+              var productData = data[0];
+      
+          // Compare to see if the user-input quantity requested by the user is less than the store's stock
+              if (quantity <= productData.stock_quantity) {
+                console.log("Your requested product is in stock! Placing order!");
+      
+          // if it is, update the query string so we can then update the stock quantities
+                var updateQueryStr = "UPDATE products SET stock_quantity = " + 
+                                    (productData.stock_quantity - quantity) + 
+                                    " WHERE item_id = " + item;
+      
+          // Update the stock quantities with the new updated query
+                connection.query(updateQueryStr, function(err, data) {
+                  if (err) throw err;
+                  
+          //Print out the successful order message and their total
+                  console.log("Thank you for your order! Your total is $" + productData.price * quantity);
+                  console.log("Come see us again soon!");
+                  // End the database connection
+                  connection.end();
+                })
+          //and if we do not have what the customer desires in stock we politely inform them 
+              } else {
+                console.log('Oh no! It seems there is not enough product in stock, your order can not be placed as is.');
+                console.log('Please modify your order.')
+              //run displayProducts and start the process over
+                displayProducts();
+              }
+            }
+          })
+        })
+      }
+
+      
+  
 
 // make a function to make sure that the user is supplying only positive integers for their inputs
   function validateInput(value) {
@@ -53,7 +125,7 @@ function displayProducts(err, result){
     if (integer && (sign === 1)) {
       return true;
     } else {
-      return 'Please enter a positive, whole number.';
+      return "Please enter a positive, whole number.";
     }
   }
 
