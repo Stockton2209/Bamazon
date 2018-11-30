@@ -36,16 +36,17 @@ function runQueries() {
 
 //display all of the items available for sale. Include the ids, names, and prices of products for sale.
 function displayProducts(err, result){
+    if (err) throw err;
     result.forEach(function(r){
       console.log(`---------------`)
-      console.log(`${r.id} | ${chalk.green(r.product_name)} | ${chalk.red(r.department_name)}, | 
+      console.log(`${r.item_id} | ${chalk.green(r.product_name)} | ${chalk.red(r.department_name)}, | 
       ${chalk.yellow(r.price)} | ${r.stock_quantity}`);
       console.log(`----------------`);
     })
   }
 // The app should then prompt users with two messages.
 
-//need a function to create the prompt (promptCustomre) 
+//need a function to create the prompt for user input (promptCustomer) 
   function promptCustomer() {
 
     // The first should ask them the ID of the product they would like to buy.
@@ -83,9 +84,9 @@ function displayProducts(err, result){
             } else {
               var productData = data[0];
       
-          // Compare to see if the user-input quantity requested by the user is less than the store's stock
+      // Compare to see if the user-input quantity requested by the user is less than or equal the store"s stock
               if (quantity <= productData.stock_quantity) {
-                console.log("Your requested product is in stock! Placing order!");
+                console.log("Your requested product is in stock! Placing order now");
       
           // if it is, update the query string so we can then update the stock quantities
                 var updateQueryStr = "UPDATE products SET stock_quantity = " + 
@@ -98,34 +99,30 @@ function displayProducts(err, result){
                   
           //Print out the successful order message and their total
                   console.log("Thank you for your order! Your total is $" + productData.price * quantity);
-                  console.log("Come see us again soon!");
+                  console.log("Enjoy your purchase. Come see us again soon!");
                   // End the database connection
                   connection.end();
                 })
           //and if we do not have what the customer desires in stock we politely inform them 
               } else {
-                console.log('Oh no! It seems there is not enough product in stock, your order can not be placed as is.');
-                console.log('Please modify your order.')
-              //run displayProducts and start the process over
-                displayProducts();
+                console.log("Oh no! It seems there is not enough of that product in stock.");
+                console.log("Please modify your order.")
+              //call promptCustomer to start the process over
+                promptCustomer();
               }
             }
           })
         })
       }
+// a function to make sure that the user is supplying only positive integers for their inputs
+function validateInput(value) {
+  var integer = Number.isInteger(parseFloat(value));
+  var sign = Math.sign(value);
 
-      
-  
-
-// make a function to make sure that the user is supplying only positive integers for their inputs
-  function validateInput(value) {
-    var integer = Number.isInteger(parseFloat(value));
-    var sign = Math.sign(value);
-
-    if (integer && (sign === 1)) {
-      return true;
-    } else {
-      return "Please enter a positive, whole number.";
-    }
+  if (integer && (sign === 1)) {
+    return true;
+  } else {
+    return "Please enter a positive, whole number.";
   }
+}
 
